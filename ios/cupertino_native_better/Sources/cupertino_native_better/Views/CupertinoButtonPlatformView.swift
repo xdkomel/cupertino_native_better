@@ -20,6 +20,7 @@ class CupertinoButtonPlatformView: NSObject, FlutterPlatformView {
   private var labelFontSize: CGFloat? = nil
   private var labelColor: UIColor? = nil
   private var labelFontWeight: Int? = nil  // Flutter FontWeight.value (0..8)
+  private let spinner = CNSymbolSpinner()
 
   init(frame: CGRect, viewId: Int64, args: Any?, messenger: FlutterBinaryMessenger) {
     self.channel = FlutterMethodChannel(name: "CupertinoNativeButton_\(viewId)", binaryMessenger: messenger)
@@ -616,6 +617,17 @@ class CupertinoButtonPlatformView: NSObject, FlutterPlatformView {
           self.removeBadge()
           result(nil)
         }
+      case "setAlpha":
+        // Opengater: dim the whole button without restyling it.
+        let alpha = ((call.arguments as? [String: Any])?["alpha"] as? NSNumber)?.doubleValue ?? 1
+        self.container.alpha = CGFloat(alpha)
+        result(nil)
+      case "setSpinning":
+        let args = call.arguments as? [String: Any]
+        let active = (args?["active"] as? NSNumber)?.boolValue ?? false
+        self.spinner.view = self.button?.imageView
+        self.spinner.set(active: active)
+        result(nil)
       case "setInteraction":
         if let args = call.arguments as? [String: Any], let inter = args["interaction"] as? NSNumber {
           self.isInteractive = inter.boolValue

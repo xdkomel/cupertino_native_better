@@ -91,6 +91,7 @@ class CNPopupMenuButton extends StatefulWidget {
     this.buttonStyle = CNButtonStyle.plain,
     this.preserveTopToBottomOrder = false,
     this.autoHideOnModal = true,
+    this.opacity = 1,
   }) : buttonIcon = null,
        buttonCustomIcon = null,
        buttonCustomIconColor = null,
@@ -112,6 +113,7 @@ class CNPopupMenuButton extends StatefulWidget {
     this.buttonStyle = CNButtonStyle.glass,
     this.preserveTopToBottomOrder = false,
     this.autoHideOnModal = true,
+    this.opacity = 1,
   }) : buttonLabel = null,
        round = true,
        width = size,
@@ -184,6 +186,9 @@ class CNPopupMenuButton extends StatefulWidget {
   /// `navigatorObservers`. No effect on iOS < 26 / non-iOS (Flutter fallback).
   final bool autoHideOnModal;
 
+  /// The native view's own alpha, 0…1: dims it with no restyling.
+  final double opacity;
+
   /// Whether this instance is configured as an icon button variant.
   bool get isIconButton =>
       buttonIcon != null ||
@@ -203,6 +208,17 @@ class _CNPopupMenuButtonState extends State<CNPopupMenuButton>
   MethodChannel? get platformViewChannel => _channel;
 
   MethodChannel? _channel;
+  double _lastOpacity = 1;
+
+  Future<void> _syncOpacity() async {
+    final ch = _channel;
+    if (ch == null || _lastOpacity == widget.opacity) return;
+    _lastOpacity = widget.opacity;
+    try {
+      await ch.invokeMethod('setAlpha', {'alpha': widget.opacity});
+    } catch (_) {}
+  }
+
   bool? _lastIsDark;
   int? _lastTint;
   String? _lastTitle;
@@ -234,6 +250,7 @@ class _CNPopupMenuButtonState extends State<CNPopupMenuButton>
   @override
   void didUpdateWidget(covariant CNPopupMenuButton oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _syncOpacity();
     _syncPropsToNativeIfNeeded();
   }
 
@@ -737,6 +754,8 @@ class _CNPopupMenuButtonState extends State<CNPopupMenuButton>
     final ch = MethodChannel('CupertinoNativePopupMenuButton_$id');
     _channel = ch;
     ch.setMethodCallHandler(_onMethodCall);
+    _lastOpacity = 1;
+    _syncOpacity();
     _lastTint = resolveColorToArgb(_effectiveTint, context);
     _lastIsDark = _isDark;
     _lastTitle = widget.buttonLabel;

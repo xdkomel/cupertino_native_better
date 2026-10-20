@@ -170,6 +170,8 @@ class CNButton extends StatefulWidget {
     this.imageAsset,
     this.config = const CNButtonConfig(),
     this.autoHideOnModal = true,
+    this.spinning = false,
+    this.opacity = 1,
   }) : badgeCount = null,
        super();
 
@@ -193,6 +195,8 @@ class CNButton extends StatefulWidget {
     this.badgeCount,
     this.config = const CNButtonConfig(style: CNButtonStyle.glass),
     this.autoHideOnModal = true,
+    this.spinning = false,
+    this.opacity = 1,
   }) : label = null,
        assert(
          icon != null || customIcon != null || imageAsset != null,
@@ -242,6 +246,14 @@ class CNButton extends StatefulWidget {
   /// `navigatorObservers`. No effect on iOS < 26 / non-iOS (Flutter fallback).
   final bool autoHideOnModal;
 
+  /// The native view's own alpha, 0…1: dims it with no restyling.
+  final double opacity;
+
+  /// Turns the icon while true; when it turns false the icon finishes its
+  /// turn, shows a check mark for a moment and comes back to rest. iOS 26+
+  /// native button only.
+  final bool spinning;
+
   /// Whether this instance is configured as the icon variant.
   bool get isIcon => icon != null || customIcon != null || imageAsset != null;
 
@@ -260,6 +272,28 @@ class _CNButtonState extends State<CNButton> with ModalHideMixin<CNButton> {
   MethodChannel? get platformViewChannel => _channel;
 
   MethodChannel? _channel;
+  double _lastOpacity = 1;
+
+  Future<void> _syncOpacity() async {
+    final ch = _channel;
+    if (ch == null || _lastOpacity == widget.opacity) return;
+    _lastOpacity = widget.opacity;
+    try {
+      await ch.invokeMethod('setAlpha', {'alpha': widget.opacity});
+    } catch (_) {}
+  }
+
+  bool _lastSpinning = false;
+
+  Future<void> _syncSpinning() async {
+    final ch = _channel;
+    if (ch == null || _lastSpinning == widget.spinning) return;
+    _lastSpinning = widget.spinning;
+    try {
+      await ch.invokeMethod('setSpinning', {'active': widget.spinning});
+    } catch (_) {}
+  }
+
   bool? _lastIsDark;
   int? _lastTint;
   String? _lastTitle;
@@ -325,6 +359,8 @@ class _CNButtonState extends State<CNButton> with ModalHideMixin<CNButton> {
   void didUpdateWidget(covariant CNButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncPropsToNativeIfNeeded();
+    _syncSpinning();
+    _syncOpacity();
   }
 
   @override
@@ -723,6 +759,10 @@ class _CNButtonState extends State<CNButton> with ModalHideMixin<CNButton> {
     final ch = MethodChannel('CupertinoNativeButton_$id');
     _channel = ch;
     ch.setMethodCallHandler(_onMethodCall);
+    _lastOpacity = 1;
+    _syncOpacity();
+    _lastSpinning = false;
+    _syncSpinning();
     // Clear previous intrinsic dimensions when view is recreated
     _intrinsicWidth = null;
     _intrinsicHeight = null;

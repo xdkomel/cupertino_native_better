@@ -19,6 +19,9 @@ class CupertinoIconPlatformView: NSObject, FlutterPlatformView {
   private var palette: [UIColor] = []
   private var renderingMode: String?
   private var gradientEnabled: Bool = false
+  /// A repeating SF Symbol animation (Opengater addition): bounce, breathe,
+  /// wiggle, pulse, variableColor, rotate.
+  private var effect: String?
 
   init(frame: CGRect, viewId: Int64, args: Any?, messenger: FlutterBinaryMessenger) {
     self.channel = FlutterMethodChannel(name: "CupertinoNativeIcon_\(viewId)", binaryMessenger: messenger)
@@ -36,6 +39,7 @@ class CupertinoIconPlatformView: NSObject, FlutterPlatformView {
       }
       if let format = dict["imageFormat"] as? String { self.imageFormat = format }
       if let b = dict["isDark"] as? NSNumber { self.isDark = b.boolValue }
+      if let e = dict["effect"] as? String { self.effect = e }
       if let style = dict["style"] as? [String: Any] {
         if let v = style["iconSize"] as? NSNumber { self.size = CGFloat(truncating: v) }
         if let v = style["iconColor"] as? NSNumber { self.color = Self.colorFromARGB(v.intValue) }
@@ -63,6 +67,7 @@ class CupertinoIconPlatformView: NSObject, FlutterPlatformView {
     ])
 
     rebuild()
+    applyEffect()
 
     channel.setMethodCallHandler { [weak self] call, result in
       guard let self = self else { result(nil); return }
@@ -219,5 +224,31 @@ class CupertinoIconPlatformView: NSObject, FlutterPlatformView {
 
   private static func createImageFromData(_ data: Data, format: String?, scale: CGFloat) -> UIImage? {
     return ImageUtils.createImageFromData(data, format: format, scale: scale)
+  }
+
+  /// Starts [effect] on the symbol, repeating with a pause between runs.
+  private func applyEffect() {
+    guard let effect, #available(iOS 17.0, *) else { return }
+    imageView.removeAllSymbolEffects()
+    let options: SymbolEffectOptions
+    if #available(iOS 18.0, *) {
+      options = .repeat(.periodic(delay: 1.4))
+    } else {
+      options = .repeating
+    }
+    switch effect {
+    case "bounce": imageView.addSymbolEffect(.bounce, options: options)
+    case "bounceDown": imageView.addSymbolEffect(.bounce.down, options: options)
+    case "pulse": imageView.addSymbolEffect(.pulse, options: .repeating)
+    case "variableColor":
+      imageView.addSymbolEffect(.variableColor.iterative.reversing, options: .repeating)
+    case "breathe":
+      if #available(iOS 18.0, *) { imageView.addSymbolEffect(.breathe, options: .repeating) }
+    case "wiggle":
+      if #available(iOS 18.0, *) { imageView.addSymbolEffect(.wiggle, options: options) }
+    case "rotate":
+      if #available(iOS 18.0, *) { imageView.addSymbolEffect(.rotate, options: options) }
+    default: break
+    }
   }
 }

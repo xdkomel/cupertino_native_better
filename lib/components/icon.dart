@@ -25,6 +25,7 @@ class CNIcon extends StatefulWidget {
     this.mode,
     this.gradient,
     this.height,
+    this.effect,
   }) : assert(
          symbol != null || imageAsset != null || customIcon != null,
          'At least one of symbol, imageAsset, or customIcon must be provided',
@@ -56,6 +57,10 @@ class CNIcon extends StatefulWidget {
 
   /// Optional fixed height; defaults to the icon's size.
   final double? height;
+
+  /// A repeating SF Symbol animation on iOS 17+: `bounce`, `bounceDown`,
+  /// `breathe`, `wiggle`, `pulse`, `variableColor` or `rotate`.
+  final String? effect;
 
   @override
   State<CNIcon> createState() => _CNIconState();
@@ -222,6 +227,7 @@ class _CNIconState extends State<CNIcon> {
       if (imageData != null) 'imageData': imageData,
       if (imageFormat != null) 'imageFormat': imageFormat,
       'isDark': _isDark,
+      if (widget.effect case final e?) 'effect': e,
       'style': <String, dynamic>{
         'iconSize': size,
         if (color != null) 'iconColor': resolveColorToArgb(color, context),

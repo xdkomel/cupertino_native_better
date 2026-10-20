@@ -179,6 +179,11 @@ class CupertinoPopupMenuButtonPlatformView: NSObject, FlutterPlatformView {
     rebuildMenu(defaultSizes: sizes, defaultColors: colors)
     if #available(iOS 14.0, *) {
       button.showsMenuAsPrimaryAction = true
+      // Items in the order given, also when the menu opens upwards: iOS
+      // would otherwise flip them to put the first next to the finger.
+      if #available(iOS 16.0, *) {
+        button.preferredMenuElementOrder = .fixed
+      }
     } else {
       button.addTarget(self, action: #selector(onButtonPressedLegacy(_:)), for: .touchUpInside)
     }
@@ -231,6 +236,12 @@ class CupertinoPopupMenuButtonPlatformView: NSObject, FlutterPlatformView {
           self.rebuildMenu(defaultSizes: sizes, defaultColors: colors)
           result(nil)
         } else { result(FlutterError(code: "bad_args", message: "Missing items", details: nil)) }
+      case "setAlpha":
+        // Opengater: dim the whole button without restyling it, which would
+        // rebuild its image and flicker.
+        let alpha = ((call.arguments as? [String: Any])?["alpha"] as? NSNumber)?.doubleValue ?? 1
+        self.container.alpha = CGFloat(alpha)
+        result(nil)
       case "setStyle":
         if let args = call.arguments as? [String: Any] {
           if let n = args["tint"] as? NSNumber {

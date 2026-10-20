@@ -18,6 +18,12 @@ public class CupertinoNativePlugin: NSObject, FlutterPlugin {
     // Setup the action sheet presenter (UIAlertController, no platform view)
     CNActionSheetManager.shared.setup(messenger: registrar.messenger())
 
+    // The system confirmation alert (Opengater addition).
+    CNAlert.setup(messenger: registrar.messenger())
+
+    // Haptic patterns through Core Haptics (Opengater addition).
+    CNHaptics.setup(messenger: registrar.messenger())
+
     // Register platform view factories
     let sliderFactory = CupertinoSliderViewFactory(messenger: registrar.messenger())
     registrar.register(sliderFactory, withId: "CupertinoNativeSlider")
