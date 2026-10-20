@@ -264,6 +264,12 @@ class CupertinoPopupMenuButtonPlatformView: NSObject, FlutterPlatformView {
           self.rebuildMenu()
           result(nil)
         } else { result(FlutterError(code: "bad_args", message: "Missing items", details: nil)) }
+      case "setAlpha":
+        // Opengater: dim the whole button without restyling it, which would
+        // rebuild its image and flicker.
+        let alpha = ((call.arguments as? [String: Any])?["alpha"] as? NSNumber)?.doubleValue ?? 1
+        self.container.alpha = CGFloat(alpha)
+        result(nil)
       case "setStyle":
         if let args = call.arguments as? [String: Any] {
           if let n = args["tint"] as? NSNumber {
